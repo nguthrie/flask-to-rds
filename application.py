@@ -74,7 +74,7 @@ def home():
 def setup():
     """Clears and sets up database. Can toggle drop_database for persistence."""
     show_databases()
-    drop_database()
+    # drop_database()
     create_project_database()
     use_database()
     # drop_table()
