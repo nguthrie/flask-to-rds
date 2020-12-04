@@ -4,6 +4,7 @@ import random
 import pymysql
 import time
 import json
+import os
 
 import credentials
 
@@ -13,6 +14,13 @@ application = app = Flask(__name__)
 db = pymysql.connect(credentials.database, credentials.user,
                      credentials.password, local_infile=True)
 cursor = db.cursor()
+
+
+@app.route('/environment_variables', methods=["GET"])
+def environment_variables():
+
+    print(os.environ.get("ALLUSERSPROFILE"))
+
 
 
 def show_databases():
@@ -82,15 +90,29 @@ def setup():
     tables_list = show_tables()
     return "Tables: {}".format(tables_list[0])
 
-
+int_list = []
 @app.route('/insert_random_number', methods=["POST"])
 def insert_random_value():
     """Adds individual numbers - index must be passed in POST request"""
-    rand_int = random.randint(1, 10)
-    command = '''INSERT INTO main_test_table (c1_index) values ({})'''.format(rand_int)
-    sql = command
-    cursor.execute(sql)
-    return select_all_to_json()
+
+    # once the list has 10 elements, reset the database
+    global int_list
+    select_all_json = select_all_to_json()
+    if len(json.loads(select_all_json)) == 10:
+        setup()
+        int_list = []
+
+    # add elements with duplicate protection
+    rand_int = random.randint(1, 20)
+    if not (rand_int in int_list):
+        int_list.append(rand_int)
+        command = '''INSERT INTO main_test_table (c1_index) values ({})'''.format(rand_int)
+        sql = command
+        cursor.execute(sql)
+        return select_all_to_json()
+    else:
+        return "Duplicate avoided"
+
 
 @app.route('/insert_random_number_repeat', methods=["POST"])
 def insert_random_value_repeat():
