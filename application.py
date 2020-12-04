@@ -38,7 +38,7 @@ def drop_database():
 
 
 def create_test_table():
-    sql = '''CREATE TABLE IF NOT EXISTS main_test_table (c1_index INT PRIMARY KEY, c2_random_int INT);'''
+    sql = '''CREATE TABLE IF NOT EXISTS main_test_table (c1_index INT PRIMARY KEY);'''
     cursor.execute(sql)
 
 
@@ -86,10 +86,8 @@ def setup():
 @app.route('/insert_random_number', methods=["POST"])
 def insert_random_value():
     """Adds individual numbers - index must be passed in POST request"""
-    incoming_json = request.get_json()
-    index = incoming_json['index']
     rand_int = random.randint(1, 10)
-    command = '''INSERT INTO main_test_table (c1_index, c2_random_int) values ({}, {})'''.format(index, rand_int)
+    command = '''INSERT INTO main_test_table (c1_index) values ({})'''.format(rand_int)
     sql = command
     cursor.execute(sql)
     return select_all_to_json()
@@ -104,7 +102,7 @@ def insert_random_value_repeat():
     while index <= entries:
         time.sleep(delay)
         rand_int = random.randint(1, 10)
-        command = '''INSERT INTO main_test_table (c1_index, c2_random_int) values ({}, {})'''.format(index, rand_int)
+        command = '''INSERT INTO main_test_table (c1_index) values ({})'''.format(rand_int)
         sql = command
         cursor.execute(sql)
         index += 1
@@ -126,6 +124,6 @@ def select_all_to_json():
 
 if __name__ == "__main__":
 
-    # app.run(host='127.0.0.1', port=5000, debug=True)
-    app.run(host='0.0.0.0', port=80, debug=True)
+    app.run(host='127.0.0.1', port=5000, debug=True)
+    # app.run(host='0.0.0.0', port=80, debug=True)
 
