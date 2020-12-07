@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, request
 
 import random
 import pymysql
@@ -6,39 +6,58 @@ import time
 import json
 import os
 
-import credentials
+import credentials_main
 
 
 application = app = Flask(__name__)
 
-db = pymysql.connect(credentials.database, credentials.user,
-                     credentials.password, local_infile=True)
-cursor = db.cursor()
+# database = os.environ.get("RDS_HOSTNAME")
+# username = os.environ.get("RDS_USERNAME")
+# password = os.environ.get("RDS_PASSWORD")
 
+db = pymysql.connect(credentials_main.database, credentials_main.user,
+                     credentials_main.password)
+cursor = db.cursor()
 
 @app.route('/environment_variables', methods=["GET"])
 def environment_variables():
 
-    print(os.environ.get("ALLUSERSPROFILE"))
+    database = os.environ.get("RDS_HOSTNAME")
+    username = os.environ.get("RDS_USERNAME")
+    password = os.environ.get("RDS_PASSWORD")
 
+    return json.dumps({"database": database, "username": username, "password": password})
 
-
+@app.route('/show_databases', methods=["GET"])
 def show_databases():
     sql = '''show databases;'''
     cursor.execute(sql)
-    for databases in cursor:
-        print(databases[0])
+    databases = {}
+    for index, database in enumerate(cursor):
+        databases[index] = database[0]
+
+    return json.dumps(databases)
+
+
+@app.route("/show_process_list", methods=["GET"])
+def show_process_list():
+    sql = '''SHOW PROCESSLIST'''
+    cursor.execute(sql)
+    response_dict = {}
+    for index, row in enumerate(cursor):
+        response_dict[index] = row
+    return json.dumps(response_dict)
 
 
 def create_project_database():
     sql = '''CREATE DATABASE IF NOT EXISTS main_app_database;'''
     cursor.execute(sql)
 
-
+@app.route('/select_database', methods=["GET"])
 def use_database():
     sql = '''USE main_app_database;'''
     cursor.execute(sql)
-
+    return "Selected main_app_database (hard-coded)."
 
 def drop_database():
     sql = '''DROP DATABASE IF EXISTS main_app_database;'''
@@ -49,14 +68,26 @@ def create_test_table():
     sql = '''CREATE TABLE IF NOT EXISTS main_test_table (c1_index INT PRIMARY KEY);'''
     cursor.execute(sql)
 
+@app.route('/create_table_post', methods=["POST"])
+def create_test_table_POST():
+    incoming_json = request.get_json()
+    print(incoming_json)
+    if incoming_json:
+        name = incoming_json['name']
+    else:
+        return "Need to pass valid JSON with table name."
+    sql = '''CREATE TABLE IF NOT EXISTS {} (c1_index INT PRIMARY KEY);'''.format(name)
+    cursor.execute(sql)
+    return show_tables()
 
+@app.route("/show_tables", methods=["GET"])
 def show_tables():
     sql = '''SHOW TABLES;'''
     cursor.execute(sql)
-    table_list = []
-    for table in cursor:
-        table_list.append(table[0])
-    return table_list
+    table_dict = {}
+    for index, table in enumerate(cursor):
+        table_dict[index] = table[0]
+    return json.dumps(table_dict)
 
 
 def select_all_data_in_table():
@@ -67,6 +98,7 @@ def select_all_data_in_table():
     for row in cursor:
         rows.append(row)
     return rows
+
 
 def drop_table():
     sql = '''DROP TABLE IF EXISTS main_test_table;'''
@@ -87,8 +119,8 @@ def setup():
     use_database()
     # drop_table()
     create_test_table()
-    tables_list = show_tables()
-    return "Tables: {}".format(tables_list[0])
+    return show_tables()
+
 
 int_list = []
 @app.route('/insert_random_number', methods=["POST"])
@@ -146,6 +178,6 @@ def select_all_to_json():
 
 if __name__ == "__main__":
 
-    app.run(host='127.0.0.1', port=5000, debug=True)
-    # app.run(host='0.0.0.0', port=80, debug=True)
+    # app.run(host='127.0.0.1', port=5000)
+    app.run(host='0.0.0.0', port=80)
 
