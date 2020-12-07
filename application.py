@@ -6,18 +6,15 @@ import time
 import json
 import os
 
-import credentials_main
-
 
 application = app = Flask(__name__)
 
-# database = os.environ.get("RDS_HOSTNAME")
-# username = os.environ.get("RDS_USERNAME")
-# password = os.environ.get("RDS_PASSWORD")
+database = os.environ.get("RDS_HOSTNAME")
+username = os.environ.get("RDS_USERNAME")
+password = os.environ.get("RDS_PASSWORD")
 
 
-db = pymysql.connect(credentials_main.database, credentials_main.user,
-                     credentials_main.password, autocommit=True)
+db = pymysql.connect(database, username, password, autocommit=True)
 
 
 @app.route('/environment_variables', methods=["GET"])
@@ -171,12 +168,13 @@ def insert_random_value():
         command = '''INSERT INTO main_test_table (c1_index) values ({})'''.format(rand_int)
         sql = command
         cursor.execute(sql)
+        cursor.close()
         return select_all_to_json()
     else:
+        cursor.close()
         return "Duplicate avoided"
 
-    db.commit()
-    cursor.close()
+
 
 @app.route('/insert_random_number_repeat', methods=["POST"])
 def insert_random_value_repeat():
@@ -213,6 +211,6 @@ def select_all_to_json():
 
 if __name__ == "__main__":
 
-    app.run(host='127.0.0.1', port=5001, debug=True)
-    # app.run(host='0.0.0.0', port=80)
+    # app.run(host='127.0.0.1', port=5001, debug=True)
+    app.run(host='0.0.0.0', port=80)
 
