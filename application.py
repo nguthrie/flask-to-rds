@@ -150,7 +150,8 @@ def setup():
 int_list = []
 @app.route('/insert_random_number', methods=["POST"])
 def insert_random_value():
-    """Adds individual numbers - index must be passed in POST request"""
+    """Adds individual numbers - index must be passed in POST request
+    Adds a random number between 0 and 20, avoids duplicates and restarts when 10 numbers have been added."""
 
     cursor = db.cursor()
 
